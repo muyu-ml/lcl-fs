@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.util.UUID;
 
-import static com.lcl.fs.FileUtils.getMimeType;
+import static com.lcl.fs.FileUtils.*;
 
 /**
  * file download and upload controller
@@ -34,18 +35,18 @@ public class FileController {
     @SneakyThrows
     @PostMapping("/upload")
     public String upload(@RequestParam("file")MultipartFile file, HttpServletRequest request) {
-        File dir = new File(uploadPath);
-        if(!dir.exists()){
-            dir.mkdirs();
-        }
         boolean needSync = false;
         String fileName = request.getHeader(HttpSyncer.getX_FILE_NAME());
         // 如果 header 中 X-Filename 为空才需要做备份，防止数据回环
         if(fileName == null || fileName.isEmpty()) {
             needSync = true;
-            fileName = file.getOriginalFilename();
+//            fileName = file.getOriginalFilename();
+            // 重新生成文件名，防止名字重复
+            fileName = getUUIDFileName(file.getOriginalFilename());
         }
-        File dest = new File(uploadPath + "/" + fileName);
+        // 将文件放置到子文件夹
+        String subDir = getSubDir(fileName);
+        File dest = new File(uploadPath + "/" + subDir + "/" + fileName);
         file.transferTo(dest);
         // 写入到备份服务器
         if(needSync) {
@@ -54,9 +55,12 @@ public class FileController {
         return fileName;
     }
 
+
+
     @RequestMapping("/download")
     public void download(String name, HttpServletResponse response){
-        String path = uploadPath + "/" + name;
+        String subdir = getSubDir(name);
+        String path = uploadPath + "/" +subdir + "/" + name;
         File file = new File(path);
         try {
             FileInputStream inputStream = new FileInputStream(file);
