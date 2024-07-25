@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 
+import static com.lcl.fs.FileUtils.getMimeType;
+
 /**
  * file download and upload controller
  * @Author conglongli
@@ -62,8 +64,10 @@ public class FileController {
             byte[] buffer = new byte[16*1024];
             // 添加 header
             response.setCharacterEncoding("UTF-8");
-            response.setContentType("application/octet-stream"); // 设置类型为二进制，即直接下载
-            response.setHeader("Content-Disposition", "attachment;filename=" + name); // 设置下载文件默认文件名
+            // 根据文件名获取文件类型
+            response.setContentType(getMimeType(name));
+            // 默认下载，设置下载文件默认文件名
+//            response.setHeader("Content-Disposition", "attachment;filename=" + name);
             response.setHeader("Content-length", String.valueOf(file.length()));
 
             // 读取文件，并逐段输出
