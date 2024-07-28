@@ -5,3 +5,4 @@ spring:
 lclfs:
     path:  ${user.home}/Documents/workspace/sourceCode/kk/lclfs/uploaddir
     backupUrl: http://localhost:8081/upload
+    autoMd5: true
