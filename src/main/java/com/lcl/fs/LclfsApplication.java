@@ -1,11 +1,13 @@
 package com.lcl.fs;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 
 import java.io.File;
 
@@ -13,6 +15,7 @@ import static com.lcl.fs.FileUtils.init;
 
 @SpringBootApplication
 @Slf4j
+@Import(RocketMQAutoConfiguration.class) // spring3 之后可以使用 @Import 注解导入配置类
 public class LclfsApplication {
 
     public static void main(String[] args) {

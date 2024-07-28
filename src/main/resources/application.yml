@@ -6,3 +6,13 @@ lclfs:
     path:  ${user.home}/Documents/workspace/sourceCode/kk/lclfs/uploaddir
     backupUrl: http://localhost:8081/upload
     autoMd5: true
+    syncBackup: false
+    downloadUri: /file/download
+    consumer-group: lclfs-consumer-group
+
+rocketmq:
+    name-server: localhost:9876
+    producer:
+        group: lclfs-producer-group
+server:
+    port: 8090

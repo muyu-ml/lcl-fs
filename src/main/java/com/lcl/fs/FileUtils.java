@@ -2,8 +2,14 @@ package com.lcl.fs;
 
 import com.alibaba.fastjson.JSON;
 import lombok.SneakyThrows;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
+import java.io.*;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -58,9 +64,36 @@ public class FileUtils {
         return originalFilename.substring(originalFilename.lastIndexOf("."));
     }
 
-    @SneakyThrows
     public static void write(File metaFile, FileMeta meta) {
         String json = JSON.toJSONString(meta);
+        writeString(metaFile, json);
+    }
+
+    @SneakyThrows
+    public static void writeString(File metaFile, String json) {
         Files.writeString(Paths.get(metaFile.getAbsolutePath()), json, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+    }
+
+    /**
+     * 从远程下载文件到指定文件
+     * @param download
+     * @param file
+     */
+    @SneakyThrows
+    public static void download(String download, File file) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
+        // 发送请求
+        ResponseEntity<Resource> exchange = restTemplate.exchange(download, HttpMethod.GET, entity, Resource.class);
+        // 读取文件，并逐段输出
+        InputStream fis = new BufferedInputStream(exchange.getBody().getInputStream());
+        byte[] buffer = new byte[16*1024];
+        // 读取文件，并逐段输出
+        OutputStream outputStream = new FileOutputStream(file);
+        while (fis.read(buffer) != -1) {
+            outputStream.write(buffer);
+        }
+        outputStream.flush();
+        fis.close();
     }
 }

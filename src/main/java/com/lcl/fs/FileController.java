@@ -1,6 +1,5 @@
 package com.lcl.fs;
 
-import com.alibaba.fastjson.JSON;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.util.UUID;
 
 import static com.lcl.fs.FileUtils.*;
 
@@ -28,14 +26,23 @@ import static com.lcl.fs.FileUtils.*;
 @RequestMapping("/file")
 public class FileController {
 
+
+    @Autowired
+    HttpSyncer httpSyncer;
+    @Autowired
+    private MQSyncer mqSyncer;
+
     @Value("${lclfs.path}")
     private String uploadPath;
     @Value("${lclfs.backupUrl}")
     private String backupUrl;
-    @Autowired
-    HttpSyncer httpSyncer;
     @Value("${lclfs.autoMd5}")
     private boolean autoMd5;
+    @Value("${lclfs.syncBackup}")
+    private boolean syncBackup;
+    @Value("${lclfs.downloadUri}")
+    private String downloadUri;
+
 
     @SneakyThrows
     @PostMapping("/upload")
@@ -66,6 +73,7 @@ public class FileController {
         meta.setName(fileName);
         meta.setOriginalFilename(originalFilename);
         meta.setSize(file.getSize());
+        meta.setDownloadUrl(IPPortUtils.getHttpUri() + downloadUri);
         if (autoMd5) {
             meta.getTags().put("md5", DigestUtils.md5DigestAsHex(new FileInputStream(dest)));
         }
@@ -78,7 +86,17 @@ public class FileController {
 
         // 3、写入到备份服务器
         if(needSync) {
-            httpSyncer.sync(dest, backupUrl, originalFilename);
+            if(syncBackup){
+                try {
+                    httpSyncer.sync(dest, backupUrl, originalFilename);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // 如果备份失败，则使用 MQ 进行备份
+                    mqSyncer.sync(meta);
+                }
+            } else {
+                mqSyncer.sync(meta);
+            }
         }
         return fileName;
     }
