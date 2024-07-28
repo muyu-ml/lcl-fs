@@ -44,11 +44,17 @@ public class FileController {
         boolean needSync = false;
         String fileName = request.getHeader(HttpSyncer.getX_FILE_NAME());
         // 如果 header 中 X-Filename 为空才需要做备份，防止数据回环
+        String originalFilename = file.getOriginalFilename();
+        // 如果文件名为空，则说明是新上传文件，则重新生成存储文件名
         if(fileName == null || fileName.isEmpty()) {
             needSync = true;
 //            fileName = file.getOriginalFilename();
             // 重新生成文件名，防止名字重复
-            fileName = getUUIDFileName(file.getOriginalFilename());
+            fileName = getUUIDFileName(originalFilename);
+        }
+        // 如果文件名不为空，则说明是备份服务器传过来的文件，需要设置原始文件名
+        else {
+            originalFilename = request.getHeader(HttpSyncer.ORIGINAL_FILENAME);
         }
         // 将文件放置到子文件夹
         String subDir = getSubDir(fileName);
@@ -58,7 +64,7 @@ public class FileController {
         // 2、处理 mete
         FileMeta meta = new FileMeta();
         meta.setName(fileName);
-        meta.setOriginalFilename(file.getOriginalFilename());
+        meta.setOriginalFilename(originalFilename);
         meta.setSize(file.getSize());
         if (autoMd5) {
             meta.getTags().put("md5", DigestUtils.md5DigestAsHex(new FileInputStream(dest)));
@@ -72,7 +78,7 @@ public class FileController {
 
         // 3、写入到备份服务器
         if(needSync) {
-            httpSyncer.sync(dest, backupUrl);
+            httpSyncer.sync(dest, backupUrl, originalFilename);
         }
         return fileName;
     }

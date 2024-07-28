@@ -22,14 +22,16 @@ import java.io.File;
 @Slf4j
 public class HttpSyncer {
 
+    public static final String ORIGINAL_FILENAME = "originalFilename";
     @Getter
     private static final String X_FILE_NAME = "X-Filename";
 
-    public String sync(File file, String url) {
+    public String sync(File file, String url, String originalFilename) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.add(X_FILE_NAME, file.getName());
+        headers.add(ORIGINAL_FILENAME, originalFilename);
 
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("file", new FileSystemResource(file));
